@@ -38,12 +38,6 @@ let students = [
     firstTrainerMeetingDone: false,
   },
   {
-    firstName: 'Caroline',
-    lastName: 'Morlet',
-    githubUserName: 'carolinemorlet',
-    firstTrainerMeetingDone: false,
-  },
-  {
     firstName: 'Cédric',
     lastName: 'Leroy',
     githubUserName: 'leroy117',
@@ -122,12 +116,6 @@ let students = [
     firstTrainerMeetingDone: false,
   },
   {
-    firstName: 'Rémi',
-    lastName: 'Cusset',
-    githubUserName: 'lerem-s38',
-    firstTrainerMeetingDone: false,
-  },
-  {
     firstName: 'Romain',
     lastName: 'Montel',
     githubUserName: 'Rom-mtl',
@@ -200,9 +188,9 @@ app.patch('/students/:githubUserName', (req, res) => {
 
 app.post('/students', (req, res) => {
   setTimeout(() => {
-    const { firstName, lastName, firstTrainerMeetingDone } = req.body;
-    const newStudent = { firstName, lastName, firstTrainerMeetingDone };
-    students.concat(newStudent);
+    const { firstName, lastName, githubUserName } = req.body;
+    const newStudent = { firstName, lastName, githubUserName };
+    students = students.concat(newStudent);
     res.json(newStudent);
   }, 1500);
 });

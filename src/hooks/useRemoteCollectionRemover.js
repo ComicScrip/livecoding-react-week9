@@ -7,14 +7,16 @@ export default function useCollectionRemover(
   options = {},
   customMutationConfig = {}
 ) {
-  const { getEntityId = (entity) => entity.id } = options;
+  const { idAttributeName = 'id' } = options;
 
   const updateLocalData = (cache, mutateActionPayload) => {
     const previousCollection = cache.getQueryData(queryKey);
     if (isArray(previousCollection)) {
       cache.setQueryData(queryKey, (old) =>
         isArray(old)
-          ? old.filter((entity) => getEntityId(entity) !== mutateActionPayload)
+          ? old.filter(
+              (entity) => entity[idAttributeName] !== mutateActionPayload
+            )
           : []
       );
     }

@@ -20,7 +20,7 @@ export default function useMutationFlow(
   return useMutation(mutationFn, {
     onMutate: (variables) => {
       if (updateLocalDataBefore) {
-        queryCache.removeQueries(queryKey);
+        queryCache.cancelQueries(queryKey);
         return updateLocalData(queryCache, variables, null, null);
       }
       return () => {};

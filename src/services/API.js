@@ -16,7 +16,7 @@ const makeCancellable = (method, url, data, config) => {
   });
   promise.cancel = () => {
     window.console.log('Request cancelled');
-    source.cancel('Query was cancelled by React Query');
+    source.cancel('Request was cancelled');
   };
   return promise;
 };
@@ -30,10 +30,22 @@ export const getCollection = (collectionName, queryParams) => {
   ).then((res) => res.data);
 };
 
+export const makeEntityAdder = (collectionName) => (attributes) =>
+  makeCancellable('post', `/${collectionName}`, attributes).then(
+    (res) => res.data
+  );
+
 export const getEntity = (collectionName, id) => {
-  return instance.get(`/${collectionName}/${id}`).then((res) => res.data);
+  makeCancellable(
+    instance.get(`/${collectionName}/${id}`).then((res) => res.data)
+  );
 };
 export const makeEntityDeleter = (collectionName) => (id) =>
-  instance.delete(`/${collectionName}/${id}`).then((res) => res.data);
+  makeCancellable('delete', `/${collectionName}/${id}`).then((res) => res.data);
+
+export const makeEntityUpdater = (collectionName) => (id, attributes) =>
+  makeCancellable('patch', `/${collectionName}/${id}`, attributes).then(
+    (res) => res.data
+  );
 
 export default instance;

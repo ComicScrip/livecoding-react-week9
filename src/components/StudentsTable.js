@@ -15,7 +15,7 @@ function StudentsTable() {
   );
 
   const [optimisticallyRemoveStudent] = useRemoteCollectionRemover(query, {
-    getEntityId: (s) => s.githubUserName,
+    idAttributeName: 'githubUserName',
     updateLocalDataBefore: true,
   });
 
@@ -58,7 +58,9 @@ function StudentsTable() {
     let sortedStudents = studentsFromServer.slice();
     if (fieldToSortByWithOrder) {
       const [fieldToSortBy, sortOrder] = fieldToSortByWithOrder.split(' ');
-      sortedStudents = sortBy(sortedStudents, fieldToSortBy);
+      sortedStudents = sortBy(sortedStudents, [
+        (s) => s[fieldToSortBy].toUpperCase(),
+      ]);
       if (sortOrder === 'DESC') {
         sortedStudents = sortedStudents.reverse();
       }
