@@ -9,9 +9,9 @@ import Main from './components/Main';
 const queryCache = new QueryCache({
   defaultConfig: {
     queries: {
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-      refetchOnMount: true,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      refetchOnMount: false,
     },
   },
 });

@@ -9,10 +9,12 @@ import useRemoteCollectionRemover from '../hooks/useRemoteCollectionRemover';
 
 function StudentsTable() {
   const [fieldToSortByWithOrder, setFieldToSortByWithOrder] = useState(null);
+  const query = 'students';
   const { isLoading, error, data: studentsFromServer } = useRemoteCollection(
-    'students'
+    query
   );
-  const [optimisticallyRemoveStudent] = useRemoteCollectionRemover('students', {
+
+  const [optimisticallyRemoveStudent] = useRemoteCollectionRemover(query, {
     getEntityId: (s) => s.githubUserName,
     updateLocalDataBefore: true,
   });

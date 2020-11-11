@@ -2,7 +2,7 @@ import isArray from 'lodash/isArray';
 import { makeEntityDeleter } from '../services/API';
 import useMutationFlow from './useMuationFlow';
 
-export default function useCollectionRemover(
+export default function useCollectionSaver(
   queryKey,
   options = {},
   customMutationConfig = {}
@@ -13,9 +13,7 @@ export default function useCollectionRemover(
     const previousCollection = cache.getQueryData(queryKey);
     if (isArray(previousCollection)) {
       cache.setQueryData(queryKey, (old) =>
-        isArray(old)
-          ? old.filter((entity) => getEntityId(entity) !== mutateActionPayload)
-          : []
+        old.filter((entity) => getEntityId(entity) !== mutateActionPayload)
       );
     }
     // return the rollback function that will be given as the third param of onError callback
@@ -24,7 +22,7 @@ export default function useCollectionRemover(
 
   return useMutationFlow(
     queryKey,
-    makeEntityDeleter(isArray(queryKey) ? queryKey[0] : queryKey),
+    makeEntityDeleter(queryKey),
     options,
     customMutationConfig,
     updateLocalData
