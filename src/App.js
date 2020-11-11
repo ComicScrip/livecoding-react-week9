@@ -6,7 +6,15 @@ import Footer from './components/Footer';
 import Header from './components/Header';
 import Main from './components/Main';
 
-const queryCache = new QueryCache();
+const queryCache = new QueryCache({
+  defaultConfig: {
+    queries: {
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      refetchOnMount: true,
+    },
+  },
+});
 
 function App() {
   return (

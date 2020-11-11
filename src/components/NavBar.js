@@ -11,9 +11,7 @@ export default function NavBar() {
           </NavLink>
         </li>
         <li>
-          <NavLink exact to="/students">
-            Students
-          </NavLink>
+          <NavLink to="/students">Students</NavLink>
         </li>
       </ul>
     </nav>

@@ -1,19 +1,13 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowDown, faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
-export default ({ fieldToSortBy, sortOrder, activeSort, onClick }) => {
-  const fieldToSortByWithOrder = `${fieldToSortBy} ${sortOrder}`;
-  const handleClick = () => {
-    onClick(fieldToSortByWithOrder);
-  };
+export default ({ onClick = () => {}, active = false, desc = false }) => {
   return (
-    <span
-      className={`sort-button${
-        activeSort === fieldToSortByWithOrder ? ' active' : ''
-      }`}
-      onClick={handleClick}
-      aria-hidden="true"
-    >
-      <i className={`fas fa-arrow-${sortOrder === 'DESC' ? 'up' : 'down'}`} />
-    </span>
+    <FontAwesomeIcon
+      className={`sort-button${active ? ' active' : ''}`}
+      onClick={onClick}
+      icon={desc ? faArrowUp : faArrowDown}
+    />
   );
 };

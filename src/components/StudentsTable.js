@@ -1,121 +1,91 @@
 import React, { useState } from 'react';
-import { useQuery } from 'react-query';
-import { sortBy } from 'lodash';
-import axios from 'axios';
-
-import {
-  getAvatarUrl,
-  getFullName,
-  getGitHubAccountUrl,
-} from '../data/students';
+import Button from '@material-ui/core/Button';
+import { Link } from 'react-router-dom';
+import sortBy from 'lodash/sortBy';
 import SortButton from './SortButton';
-import StudentsTableRow from './StudentsTableRow';
+import { getGitHubAccountUrl } from '../data/students';
+import useRemoteCollection from '../hooks/useRemoteCollection';
+import useRemoteCollectionRemover from '../hooks/useRemoteCollectionRemover';
 
-function StudentsTable({ initialStudentList }) {
-  const [activeSort, setActiveSort] = useState('');
-  const [sortedStudents, setSortedStudents] = useState([]);
-  const handleSortButtonClicked = (fieldToSortByWithOrder) => {
-    if (activeSort === fieldToSortByWithOrder) {
-      setSortedStudents(initialStudentList);
-      setActiveSort(null);
-    } else {
-      const [fieldToSortBy, sortOrder] = fieldToSortByWithOrder.split(' ');
-      let sorted = sortBy(initialStudentList, fieldToSortBy);
-      if (sortOrder === 'DESC') {
-        sorted = sortedStudents.reverse();
-      }
-      setSortedStudents(sorted);
-      setActiveSort(fieldToSortByWithOrder);
-    }
-  };
+function StudentsTable() {
+  const [fieldToSortByWithOrder, setFieldToSortByWithOrder] = useState(null);
+  const { isLoading, error, data: studentsFromServer } = useRemoteCollection(
+    'students'
+  );
+  const [optimisticallyRemoveStudent] = useRemoteCollectionRemover('students', {
+    getEntityId: (s) => s.githubUserName,
+    updateLocalDataBefore: true,
+  });
 
-  const handleTrainerMeetingDoneToogle = (githubUserName) => {
-    setSortedStudents((sorted) =>
-      sorted.map((s) =>
-        s.githubUserName === githubUserName
-          ? {
-              ...s,
-              firstTrainerMeetingDone: !s.firstTrainerMeetingDone,
-            }
-          : s
-      )
+  if (error) return <p className="error">Error</p>;
+  if (isLoading) return <p>Loading students from API</p>;
+  if (!studentsFromServer.length) return <p>No Student to show</p>;
+
+  const renderSortButton = (fieldToSortBy, desc = false) => {
+    const fieldWithOrder = `${fieldToSortBy} ${desc ? 'DESC' : 'ASC'}`;
+    return (
+      <SortButton
+        active={fieldWithOrder === fieldToSortByWithOrder}
+        onClick={() => setFieldToSortByWithOrder(fieldWithOrder)}
+        desc={desc}
+      />
     );
   };
 
-  const { isLoading, error } = useQuery('repoData', () =>
-    axios.get('http://localhost:8080/students').then((res) => res.data)
+  const renderTableHead = () => (
+    <tr>
+      <td>
+        Prénom
+        <span className="col-sort-buttons-container">
+          {renderSortButton('firstName')}
+          {renderSortButton('firstName', true)}
+        </span>
+      </td>
+      <td>
+        Nom
+        <span className="col-sort-buttons-container">
+          {renderSortButton('lastName')}
+          {renderSortButton('lastName', true)}
+        </span>
+      </td>
+      <td>Retirer de la liste</td>
+    </tr>
   );
 
-  if (error) return <p className="error">{error}</p>;
-  if (isLoading) return <p>loading students from API</p>;
+  const renderSortedStudents = () => {
+    let sortedStudents = studentsFromServer.slice();
+    if (fieldToSortByWithOrder) {
+      const [fieldToSortBy, sortOrder] = fieldToSortByWithOrder.split(' ');
+      sortedStudents = sortBy(sortedStudents, fieldToSortBy);
+      if (sortOrder === 'DESC') {
+        sortedStudents = sortedStudents.reverse();
+      }
+    }
+    return sortedStudents.map((student) => (
+      <tr key={student.githubUserName}>
+        <td>
+          <a href={getGitHubAccountUrl(student)}>{student.firstName}</a>
+        </td>
+        <td>
+          <Link to={`/students/${student.githubUserName}`}>
+            {student.lastName.toUpperCase()}
+          </Link>
+        </td>
+        <td>
+          <Button
+            onClick={() => optimisticallyRemoveStudent(student.githubUserName)}
+          >
+            Retirer
+          </Button>
+        </td>
+      </tr>
+    ));
+  };
 
   return (
     <table>
-      <thead>
-        <tr>
-          <td>
-            Prénom
-            <span className="col-sort-buttons-container">
-              <SortButton
-                fieldToSortBy="firstName"
-                sortOrder="ASC"
-                onClick={handleSortButtonClicked}
-                activeSort={activeSort}
-              />
-              <SortButton
-                fieldToSortBy="firstName"
-                sortOrder="DESC"
-                onClick={handleSortButtonClicked}
-                activeSort={activeSort}
-              />
-            </span>
-          </td>
-          <td>
-            Nom
-            <span className="col-sort-buttons-container">
-              <SortButton
-                fieldToSortBy="lastName"
-                sortOrder="ASC"
-                onClick={handleSortButtonClicked}
-                activeSort={activeSort}
-              />
-              <SortButton
-                fieldToSortBy="lastName"
-                sortOrder="DESC"
-                onClick={handleSortButtonClicked}
-                activeSort={activeSort}
-              />
-            </span>
-          </td>
-          <td>Retirer de la liste</td>
-        </tr>
-      </thead>
-      <tbody>
-        {sortedStudents.map((student) => {
-          const {
-            githubUserName,
-            firstName,
-            lastName,
-            firstTrainerMeetingDone,
-          } = student;
-          return (
-            <StudentsTableRow
-              key={githubUserName}
-              handleTrainerMeetingDoneToogle={() =>
-                handleTrainerMeetingDoneToogle(githubUserName)
-              }
-              {...{
-                firstTrainerMeetingDone,
-                firstName,
-                lastName,
-                gitHubAccountUrl: getGitHubAccountUrl(student),
-                avatarUrl: getAvatarUrl(student),
-                fullName: getFullName(student),
-              }}
-            />
-          );
-        })}
-      </tbody>
+      <thead>{renderTableHead()}</thead>
+      <tbody>{renderSortedStudents()}</tbody>
     </table>
   );
 }
