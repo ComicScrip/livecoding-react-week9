@@ -1,5 +1,4 @@
-import React, { useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState } from 'react';
 import TextField from '@material-ui/core/TextField';
 import { makeStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
@@ -13,32 +12,27 @@ const useStyles = makeStyles((theme) => ({
 }));
 export default function StudentForm() {
   const classes = useStyles();
-  const firstNameRef = useRef();
-  const { register, handleSubmit, errors, reset: resetForm } = useForm();
   const [isLoading, setIsLoading] = useState(false);
+
   const save = (data) => {
     console.log(data);
     setIsLoading(true);
     // post data on server and then
     setIsLoading(false);
-    resetForm();
+    // resetForm();
   };
 
   const onSubmit = (data) => save(data);
-  console.log('err', errors);
+  // console.log('err', errors);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} disabled>
+    <form onSubmit={() => onSubmit()}>
       <TextField
         disabled={isLoading}
         id="firstName"
         name="firstName"
         label="Prénom"
         variant="filled"
-        inputRef={(e) => {
-          firstNameRef.current = e;
-          register(e, { required: true });
-        }}
       />
       <TextField
         disabled={isLoading}
@@ -46,7 +40,6 @@ export default function StudentForm() {
         name="lastName"
         label="Nom"
         variant="filled"
-        inputRef={register({ required: true })}
       />
       <TextField
         disabled={isLoading}
@@ -54,7 +47,6 @@ export default function StudentForm() {
         name="githubUserName"
         label="identifiant GitHub"
         variant="filled"
-        inputRef={register({ required: true })}
       />
       <Button
         disabled={isLoading}
