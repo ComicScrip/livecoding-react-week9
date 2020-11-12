@@ -1,10 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import TextField from '@material-ui/core/TextField';
 import { makeStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import Button from '@material-ui/core/Button';
-import useRemoteCollectionAdder from '../hooks/useRemoteCollectionAdder';
 
 const useStyles = makeStyles((theme) => ({
   button: {
@@ -16,20 +15,14 @@ export default function StudentForm() {
   const classes = useStyles();
   const firstNameRef = useRef();
   const { register, handleSubmit, errors, reset: resetForm } = useForm();
-  const [save, { isLoading }] = useRemoteCollectionAdder(
-    'students',
-    {
-      idAttributeName: 'githubUserName',
-      updateLocalDataBefore: false,
-      updateLocalDataAfter: true,
-    },
-    {
-      onSuccess: () => {
-        resetForm();
-        firstNameRef.current.focus();
-      },
-    }
-  );
+  const [isLoading, setIsLoading] = useState(false);
+  const save = (data) => {
+    console.log(data);
+    setIsLoading(true);
+    // post data on server and then
+    setIsLoading(false);
+    resetForm();
+  };
 
   const onSubmit = (data) => save(data);
   console.log('err', errors);
@@ -40,26 +33,26 @@ export default function StudentForm() {
         disabled={isLoading}
         id="firstName"
         name="firstName"
-        label="First Name"
+        label="Prénom"
         variant="filled"
         inputRef={(e) => {
           firstNameRef.current = e;
-          register(e, { required: true, maxLength: 80 });
+          register(e, { required: true });
         }}
       />
       <TextField
         disabled={isLoading}
         id="lastName"
         name="lastName"
-        label="Last Name"
+        label="Nom"
         variant="filled"
-        inputRef={register({ required: true, maxLength: 80 })}
+        inputRef={register({ required: true })}
       />
       <TextField
         disabled={isLoading}
         id="githubUserName"
         name="githubUserName"
-        label="GitHub user name"
+        label="identifiant GitHub"
         variant="filled"
         inputRef={register({ required: true })}
       />
@@ -71,7 +64,7 @@ export default function StudentForm() {
         className={classes.button}
         startIcon={<AddIcon />}
       >
-        Add
+        Ajouter
       </Button>
     </form>
   );

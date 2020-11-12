@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useQuery } from 'react-query';
 
 import LoadingIndicator from './LoadingIndicator';
 import ErrorBox from './ErrorBox';
@@ -15,14 +14,21 @@ function StudentDetailsPage({
     params: { githubUserName },
   },
 }) {
-  const { isLoading, error, data } = useQuery(
-    ['students/', githubUserName],
-    () =>
-      axios
-        .get(`http://localhost:8080/students/${githubUserName}`)
-        .then((res) => res.data)
-  );
-  const student = data || [];
+  const [student, setStudent] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setIsLoading(true);
+    axios
+      .get(`http://localhost:8080/students/${githubUserName}`)
+      .then((res) => res.data)
+      .then((data) => setStudent(data))
+      .catch((err) => setError(err))
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
   if (isLoading) return <LoadingIndicator />;
   if (error) return <ErrorBox message={error} />;

@@ -1,27 +1,39 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from '@material-ui/core/Button';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
 import sortBy from 'lodash/sortBy';
 import SortButton from './SortButton';
 import { getGitHubAccountUrl } from '../data/students';
-import useRemoteCollection from '../hooks/useRemoteCollection';
-import useRemoteCollectionRemover from '../hooks/useRemoteCollectionRemover';
+import LoadingIndicator from './LoadingIndicator';
+import ErrorBox from './ErrorBox';
 
 function StudentsTable() {
   const [fieldToSortByWithOrder, setFieldToSortByWithOrder] = useState(null);
-  const query = 'students';
-  const { isLoading, error, data: studentsFromServer } = useRemoteCollection(
-    query
-  );
+  const [studentsFromServer, setStudentsFromServer] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [optimisticallyRemoveStudent] = useRemoteCollectionRemover(query, {
-    idAttributeName: 'githubUserName',
-    updateLocalDataBefore: true,
-  });
+  useEffect(() => {
+    setIsLoading(true);
+    axios
+      .get('http://localhost:8080/students')
+      .then((res) => res.data)
+      .then((data) => setStudentsFromServer(data))
+      .catch((err) => setError(err))
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
-  if (error) return <p className="error">Error</p>;
-  if (isLoading) return <p>Loading students from API</p>;
-  if (!studentsFromServer.length) return <p>No Student to show</p>;
+  const optimisticallyRemoveStudent = (id) => {
+    console.log(`suppression de l'élève avec l'identifiant ${id}`);
+  };
+
+  if (error)
+    return <ErrorBox message="Erreur lors du chargement de la liste" />;
+  if (isLoading) return <LoadingIndicator />;
+  if (!studentsFromServer.length) return <p>Aucun élève dans la liste</p>;
 
   const renderSortButton = (fieldToSortBy, desc = false) => {
     const fieldWithOrder = `${fieldToSortBy} ${desc ? 'DESC' : 'ASC'}`;
