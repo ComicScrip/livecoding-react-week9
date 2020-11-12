@@ -1,24 +1,37 @@
 import axios, { CancelToken } from 'axios';
 import queryString from 'query-string';
 
+import * as Promise from 'bluebird';
+
+Promise.config({
+  cancellation: true,
+});
+
 const instance = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
 });
 
 const makeCancellable = (method, url, data, config) => {
-  const source = CancelToken.source();
-  const promise = instance({
-    method,
-    url,
-    data,
-    cancelToken: source.token,
-    ...config,
+  return new Promise((resolve, reject, onCancel) => {
+    const source = CancelToken.source();
+    instance({
+      method,
+      url,
+      data,
+      cancelToken: source.token,
+      ...config,
+    })
+      .then(resolve)
+      .catch((thrown) => {
+        if (!axios.isCancel(thrown)) throw new Error(thrown);
+      })
+      .catch(reject);
+
+    onCancel(() => {
+      window.console.log('Request cancelled');
+      source.cancel('Request was cancelled');
+    });
   });
-  promise.cancel = () => {
-    window.console.log('Request cancelled');
-    source.cancel('Request was cancelled');
-  };
-  return promise;
 };
 
 export const getCollection = (collectionName, queryParams) => {
