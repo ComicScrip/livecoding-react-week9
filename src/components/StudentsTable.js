@@ -1,30 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Button from '@material-ui/core/Button';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
 import sortBy from 'lodash/sortBy';
+import { useQuery } from 'react-query';
 import SortButton from './SortButton';
 import { getGitHubAccountUrl } from '../data/students';
 import LoadingIndicator from './LoadingIndicator';
 import ErrorBox from './ErrorBox';
+import { getCollection } from '../services/API';
 
 function StudentsTable() {
   const [fieldToSortByWithOrder, setFieldToSortByWithOrder] = useState(null);
-  const [studentsFromServer, setStudentsFromServer] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    setIsLoading(true);
-    axios
-      .get('http://localhost:8080/students')
-      .then((res) => res.data)
-      .then((data) => setStudentsFromServer(data))
-      .catch((err) => setError(err))
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
+  const { isLoading, error, data: students } = useQuery(
+    'students',
+    getCollection
+  );
 
   const optimisticallyRemoveStudent = (id) => {
     console.log(`suppression de l'élève avec l'identifiant ${id}`);
@@ -33,7 +23,7 @@ function StudentsTable() {
   if (error)
     return <ErrorBox message="Erreur lors du chargement de la liste" />;
   if (isLoading) return <LoadingIndicator />;
-  if (!studentsFromServer.length) return <p>Aucun élève dans la liste</p>;
+  if (!students.length) return <p>Aucun élève dans la liste</p>;
 
   const renderSortButton = (fieldToSortBy, desc = false) => {
     const fieldWithOrder = `${fieldToSortBy} ${desc ? 'DESC' : 'ASC'}`;
@@ -67,7 +57,7 @@ function StudentsTable() {
   );
 
   const renderSortedStudents = () => {
-    let sortedStudents = studentsFromServer.slice();
+    let sortedStudents = students.slice();
     if (fieldToSortByWithOrder) {
       const [fieldToSortBy, sortOrder] = fieldToSortByWithOrder.split(' ');
       sortedStudents = sortBy(sortedStudents, [

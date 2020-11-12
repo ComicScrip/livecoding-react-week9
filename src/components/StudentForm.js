@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef } from 'react';
 import TextField from '@material-ui/core/TextField';
 import { makeStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import Button from '@material-ui/core/Button';
+import { useForm } from 'react-hook-form';
+import { useMutation, useQueryCache } from 'react-query';
+import { makeEntityAdder } from '../services/API';
 
 const useStyles = makeStyles((theme) => ({
   button: {
@@ -11,28 +14,46 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 export default function StudentForm() {
+  const { handleSubmit, register, errors, reset: resetForm } = useForm();
+  const queryCache = useQueryCache();
   const classes = useStyles();
-  const [isLoading, setIsLoading] = useState(false);
+  const firstNameRef = useRef();
 
-  const save = (data) => {
-    console.log(data);
-    setIsLoading(true);
-    // post data on server and then
-    setIsLoading(false);
-    // resetForm();
-  };
+  const [save, { isLoading, error: submitError }] = useMutation(
+    makeEntityAdder('students'),
+    {
+      onMutate: (variables) => {
+        queryCache.setQueryData('students', (oldList) => [
+          ...oldList,
+          variables,
+        ]);
+      },
+      onSuccess: () => {
+        resetForm();
+        firstNameRef.current.focus();
+        // queryCache.setQueryData('students', (oldList) => [...oldList, data]);
+      },
+    }
+  );
 
   const onSubmit = (data) => save(data);
-  // console.log('err', errors);
+  console.log('err', errors);
+  console.log(submitError);
 
   return (
-    <form onSubmit={() => onSubmit()}>
+    <form onSubmit={handleSubmit(onSubmit)}>
       <TextField
         disabled={isLoading}
         id="firstName"
         name="firstName"
         label="Prénom"
         variant="filled"
+        inputRef={(e) => {
+          register(e, {
+            required: true,
+          });
+          firstNameRef.current = e;
+        }}
       />
       <TextField
         disabled={isLoading}
@@ -40,6 +61,9 @@ export default function StudentForm() {
         name="lastName"
         label="Nom"
         variant="filled"
+        inputRef={register({
+          required: true,
+        })}
       />
       <TextField
         disabled={isLoading}
@@ -47,6 +71,9 @@ export default function StudentForm() {
         name="githubUserName"
         label="identifiant GitHub"
         variant="filled"
+        inputRef={register({
+          required: true,
+        })}
       />
       <Button
         disabled={isLoading}
