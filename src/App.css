@@ -193,7 +193,14 @@ td a {
 .col-sort-buttons-container .sort-button.active {
   opacity: 1;
 }
+.error-box-container {
+  margin: 10px;
+  margin-bottom: 30px;
+}
 
-.error {
-  color: red;
+.error-box {
+  padding: 10px;
+  background-color: rgb(204, 46, 46);
+  color: black;
+  display: inline;
 }

@@ -1,3 +1,4 @@
+const Joi = require('joi');
 const express = require('express');
 const cors = require('cors');
 
@@ -161,6 +162,7 @@ app.delete('/students/:githubUserName', (req, res) => {
       (s) => s.githubUserName === req.params.githubUserName
     );
     if (student) {
+      // return res.sendStatus(500);
       students = students.filter(
         (s) => s.githubUserName !== req.params.githubUserName
       );
@@ -186,12 +188,43 @@ app.patch('/students/:githubUserName', (req, res) => {
   }, 1500);
 });
 
+const validateStudent = (attributes) => {
+  return Joi.object({
+    firstName: Joi.string()
+      .regex(/^[a-zA-Z]+$/)
+      .min(1)
+      .max(30)
+      .required(),
+    lastName: Joi.string()
+      .regex(/^[a-zA-Z]+$/)
+      .min(1)
+      .max(30)
+      .required(),
+    githubUserName: Joi.string().alphanum().min(1).required(),
+  }).validate(attributes);
+};
+
 app.post('/students', (req, res) => {
   setTimeout(() => {
     const { firstName, lastName, githubUserName } = req.body;
     const newStudent = { firstName, lastName, githubUserName };
-    students = students.concat(newStudent);
-    res.json(newStudent);
+    const validationError = validateStudent(newStudent).error;
+
+    if (validationError) {
+      res.status(422);
+      res.json({
+        errorMessage: validationError.message,
+      });
+    } else if (students.find((s) => s.githubUserName === githubUserName)) {
+      res.status(422);
+      res.json({
+        errorMessage:
+          'A student with this github username is already in the list',
+      });
+    } else {
+      students = students.concat(newStudent);
+      res.json(newStudent);
+    }
   }, 1500);
 });
 

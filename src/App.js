@@ -1,24 +1,33 @@
 import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { QueryCache, ReactQueryCacheProvider } from 'react-query';
+import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import './App.css';
 import Footer from './components/Footer';
 import Header from './components/Header';
 import Main from './components/Main';
+import StudentsContextProvider from './contexts/StudentsContext';
 
-const queryCache = new QueryCache();
+const theme = createMuiTheme({
+  palette: {
+    primary: {
+      main: '#222',
+    },
+  },
+});
 
 function App() {
   return (
-    <Router>
-      <ReactQueryCacheProvider queryCache={queryCache}>
-        <div className="App">
-          <Header />
-          <Main />
-          <Footer />
-        </div>
-      </ReactQueryCacheProvider>
-    </Router>
+    <ThemeProvider theme={theme}>
+      <Router>
+        <StudentsContextProvider>
+          <div className="App">
+            <Header />
+            <Main />
+            <Footer />
+          </div>
+        </StudentsContextProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 

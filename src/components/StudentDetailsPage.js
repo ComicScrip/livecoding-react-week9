@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-
 import LoadingIndicator from './LoadingIndicator';
 import ErrorBox from './ErrorBox';
 import {
@@ -8,6 +6,7 @@ import {
   getFullName,
   getGitHubAccountUrl,
 } from '../data/students';
+import { getEntity } from '../services/API';
 
 function StudentDetailsPage({
   match: {
@@ -18,16 +17,37 @@ function StudentDetailsPage({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  /* Better version below
   useEffect(() => {
     setIsLoading(true);
+    const request = CancelToken.source();
     axios
-      .get(`http://localhost:8080/students/${githubUserName}`)
+      .get(`http://localhost:8080/students/${githubUserName}`, {
+        cancelToken: request.token,
+      })
       .then((res) => res.data)
       .then((data) => setStudent(data))
       .catch((err) => setError(err))
       .finally(() => {
         setIsLoading(false);
       });
+    return () => {
+      request.cancel();
+    };
+  }, []);
+  */
+
+  useEffect(() => {
+    setIsLoading(true);
+    const request = getEntity('students', githubUserName)
+      .then((data) => setStudent(data))
+      .catch((err) => setError(err))
+      .finally(() => {
+        if (!request.isCancelled()) setIsLoading(false);
+      });
+    return () => {
+      request.cancel();
+    };
   }, []);
 
   if (isLoading) return <LoadingIndicator />;

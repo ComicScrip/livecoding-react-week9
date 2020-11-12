@@ -7,7 +7,7 @@ export default function NavBar() {
       <ul>
         <li>
           <NavLink exact to="/">
-            Accueil
+            Groups
           </NavLink>
         </li>
         <li>

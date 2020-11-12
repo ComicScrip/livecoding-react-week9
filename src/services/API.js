@@ -7,6 +7,8 @@ Promise.config({
   cancellation: true,
 });
 
+// If our API is deployed somewhere else, we just have to change the
+// REACT_APP_API_BASE_URL variable in .env file at the root of the project
 const instance = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
 });
@@ -23,42 +25,48 @@ const makeCancellable = (method, url, data, config) => {
     })
       .then(resolve)
       .catch((thrown) => {
-        if (!axios.isCancel(thrown)) throw new Error(thrown);
+        // Cancellations should not provoque errors.
+        // Only rethrow the non-cancellation related exceptions
+        if (!axios.isCancel(thrown)) throw thrown;
       })
       .catch(reject);
 
     onCancel(() => {
-      window.console.log('Request cancelled');
+      // With bluebird Promises, we've got a cancel() method on Promises !
+      // Chen it is called, this code runs.
+      // It's the perfect place to cancel the axios
+      // request in order to save bandwidth, CPU and memory :)
       source.cancel('Request was cancelled');
     });
   });
 };
 
-export const getCollection = (collectionName, queryParams) => {
-  return makeCancellable(
+const extractData = (res) => res.data;
+
+export const getCollection = (collectionName, queryParams, config = {}) =>
+  makeCancellable(
     'get',
     `/${collectionName}${
       queryParams ? `?${queryString.stringify(queryParams)}` : ''
-    }`
-  ).then((res) => res.data);
-};
+    }`,
+    null,
+    config
+  ).then(extractData);
 
-export const makeEntityAdder = (collectionName) => (attributes) =>
-  makeCancellable('post', `/${collectionName}`, attributes).then(
-    (res) => res.data
+export const makeEntityAdder = (collectionName) => (attributes, config = {}) =>
+  makeCancellable('post', `/${collectionName}`, attributes, config).then(
+    extractData
   );
 
-export const getEntity = (collectionName, id) => {
-  makeCancellable(
-    instance.get(`/${collectionName}/${id}`).then((res) => res.data)
-  );
-};
+export const getEntity = (collectionName, id) =>
+  makeCancellable('get', `/${collectionName}/${id}`).then(extractData);
+
 export const makeEntityDeleter = (collectionName) => (id) =>
-  makeCancellable('delete', `/${collectionName}/${id}`).then((res) => res.data);
+  makeCancellable('delete', `/${collectionName}/${id}`).then(extractData);
 
 export const makeEntityUpdater = (collectionName) => (id, attributes) =>
   makeCancellable('patch', `/${collectionName}/${id}`, attributes).then(
-    (res) => res.data
+    extractData
   );
 
 export default instance;
