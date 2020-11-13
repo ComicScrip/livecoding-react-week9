@@ -1,21 +1,21 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import Button from '@material-ui/core/Button';
+import { useMutation, useQuery, useQueryCache } from 'react-query';
 import { Link } from 'react-router-dom';
 import sortBy from 'lodash/sortBy';
 import SortButton from './SortButton';
 import { getGitHubAccountUrl } from '../data/students';
 import LoadingIndicator from './LoadingIndicator';
 import ErrorBox from './ErrorBox';
-import { StudentsContext } from '../contexts/StudentsContext';
 import TransitionsModal from './TransitionModal';
-import { getCollection, makeEntityDeleter } from '../services/API';
+import {
+  getCollection,
+  isCancelledError,
+  makeEntityDeleter,
+} from '../services/API';
 
 function StudentsTable() {
-  const deleteRequestRef = useRef(null);
-  const { students, setStudents } = useContext(StudentsContext);
   const [fieldToSortByWithOrder, setFieldToSortByWithOrder] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [
     showDeletionConfirmationModal,
     setShowDeletionConfirmationModal,
@@ -26,50 +26,11 @@ function StudentsTable() {
   ] = useState(true);
   const [onDeleteConfirmation, setOnDeleteConfirmation] = useState(() => {});
 
-  /* Better version below 
-  useEffect(() => {
-    setIsLoading(true);
-    setError(null);
-    const request = CancelToken.source();
-    axios
-      .get('http://localhost:8080/students', {
-        cancelToken: request.token,
-      })
-      .then((res) => res.data)
-      .then((stduentListFromServer) => {
-        setStudents(stduentListFromServer);
-      })
-      .catch((err) => setError(err))
-      .finally(() => {
-        setIsLoading(false);
-      });
-    return () => {
-      request.cancel();
-    };
-  }, []);
-  */
-
-  useEffect(() => {
-    setIsLoading(true);
-    setError(null);
-    const request = getCollection('students')
-      .then(setStudents)
-      .catch(setError)
-      .finally(() => {
-        if (!request.isCancelled()) setIsLoading(false);
-      });
-    return () => {
-      request.cancel();
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (deleteRequestRef.current) {
-        deleteRequestRef.current.cancel();
-      }
-    };
-  }, []);
+  const { isLoading, data: students, error } = useQuery(
+    'students',
+    getCollection
+  );
+  const isError = error && !isCancelledError(error);
 
   const confirm = (ifYes) => {
     return () => {
@@ -85,34 +46,24 @@ function StudentsTable() {
     };
   };
 
-  /*
-  const optimisticallyRemoveStudent = (id) => {
-    const backup = students.slice();
-    setStudents((currentList) =>
-      currentList.filter((s) => s.githubUserName !== id)
-    );
-    deleteRequestRef.current = CancelToken.source();
-    axios
-      .delete(`http://localhost:8080/students/${id}`, {
-        cancelToken: deleteRequestRef.current.token,
-      })
-      .catch(() => {
-        setStudents(backup);
-      });
-  };
-  */
+  const cache = useQueryCache();
 
-  const optimisticallyRemoveStudent = (id) => {
-    const backup = students.slice();
-    setStudents((currentList) =>
-      currentList.filter((s) => s.githubUserName !== id)
-    );
-    deleteRequestRef.current = makeEntityDeleter('students')(id).catch(() => {
-      setStudents(backup);
-    });
-  };
+  const [optimisticallyRemoveStudent] = useMutation(
+    makeEntityDeleter('students'),
+    {
+      onMutate: (id) => {
+        cache.cancelQueries('students');
+        const backup = cache.getQueryData('students');
+        cache.setQueryData('students', (oldList) =>
+          oldList.filter((s) => s.githubUserName !== id)
+        );
+        return () => cache.setQueryData('students', () => backup);
+      },
+      onError: (err, variables, rollback) => rollback(),
+    }
+  );
 
-  if (error)
+  if (isError)
     return <ErrorBox message="Erreur lors du chargement de la liste" />;
   if (isLoading) return <LoadingIndicator />;
   if (!students.length) return <p>Aucun élève dans la liste</p>;

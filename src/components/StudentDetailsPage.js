@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from 'react-query';
 import LoadingIndicator from './LoadingIndicator';
 import ErrorBox from './ErrorBox';
 import {
@@ -6,52 +7,26 @@ import {
   getFullName,
   getGitHubAccountUrl,
 } from '../data/students';
-import { getEntity } from '../services/API';
+import { getEntity, isCancelledError } from '../services/API';
 
 function StudentDetailsPage({
   match: {
     params: { githubUserName },
   },
 }) {
-  const [student, setStudent] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  /* Better version below
-  useEffect(() => {
-    setIsLoading(true);
-    const request = CancelToken.source();
-    axios
-      .get(`http://localhost:8080/students/${githubUserName}`, {
-        cancelToken: request.token,
-      })
-      .then((res) => res.data)
-      .then((data) => setStudent(data))
-      .catch((err) => setError(err))
-      .finally(() => {
-        setIsLoading(false);
-      });
-    return () => {
-      request.cancel();
-    };
-  }, []);
-  */
-
-  useEffect(() => {
-    setIsLoading(true);
-    const request = getEntity('students', githubUserName)
-      .then((data) => setStudent(data))
-      .catch((err) => setError(err))
-      .finally(() => {
-        if (!request.isCancelled()) setIsLoading(false);
-      });
-    return () => {
-      request.cancel();
-    };
-  }, []);
+  const { isLoading, data: student, error } = useQuery(
+    ['students', githubUserName],
+    getEntity
+  );
+  const isError = error && !isCancelledError(error);
 
   if (isLoading) return <LoadingIndicator />;
-  if (error) return <ErrorBox message={error} />;
+  if (isError)
+    return (
+      <ErrorBox
+        message={"impossible de charger les informations sur l'élève"}
+      />
+    );
   if (!student)
     return <p>Aucun élève avec le compte GH "{githubUserName}"...</p>;
 
